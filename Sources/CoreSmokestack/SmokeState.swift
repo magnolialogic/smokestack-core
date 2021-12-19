@@ -114,7 +114,7 @@ extension SmokeState {
 	public func json() -> String {
 		var description = "{"
 		description += "\"mode\":\"\(mode.rawValue)\","
-		description += "\"probe_connected\":\(probeConnected),"
+		description += "\"probeConnected\":\(probeConnected),"
 		description += "\"online\":\(online),"
 		description += "\"power\":\(power),"
 		description += "\"temps\":\(temps),"
