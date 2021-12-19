@@ -35,7 +35,7 @@ public final class SmokeState: Codable {
 		}
 	}
 	
-	public var temps: [SmokeSensorKey: Measurement<UnitTemperature>] = [:] {
+	public var temps = [SmokeSensorKey: Measurement<UnitTemperature>]() {
 		willSet {
 			if logChanges {
 				var changeSummary = "grillCurrent: \(String(describing: newValue[.grillCurrent]!.formatted()))"
@@ -60,7 +60,6 @@ public final class SmokeState: Codable {
 		self.probeConnected = false
 		self.online = false
 		self.power = false
-		self.temps = [:]
 	}
 	
 	enum CodingKeys: CodingKey {
@@ -88,7 +87,7 @@ public final class SmokeState: Codable {
 		try container.encode(probeConnected, forKey: .probeConnected)
 		try container.encode(online, forKey: .online)
 		try container.encode(power, forKey: .power)
-		var rawTemps: [String: Int] = [:]
+		var rawTemps = [String: Int]()
 		for temp in temps {
 			rawTemps[temp.key.rawValue] = Int(temp.value.value)
 		}
@@ -110,33 +109,39 @@ extension SmokeState: Equatable {
 	}
 }
 
+// MARK: - Patch
+
 extension SmokeState {
-	public func json() -> String {
-		var description = "{"
-		description += "\"mode\":\"\(mode.rawValue)\","
-		description += "\"probeConnected\":\(probeConnected),"
-		description += "\"online\":\(online),"
-		description += "\"power\":\(power),"
-		description += "\"temps\":\(temps),"
-		description += "}"
+	public struct PatchContent: Codable {
+		public var mode: String?
+		public var probeConnected: Bool?
+		public var online: Bool?
+		public var power: Bool?
+		public var targetGrill: Int?
+		public var targetProbe: Int?
+		public var temps: [SmokeSensorKey : Measurement<UnitTemperature>]?
 		
-		return description
-	}
-	
-	public func json(forDisplay: Bool) -> String {
-		var description = "SmokeState(\n"
-		description += " mode: \(mode.rawValue),\n"
-		description += " probeConnected: \(probeConnected),\n"
-		description += " online: \(online),\n"
-		description += " power: \(power),\n"
-		description += " temps: \(temps),\n"
-		description += ")"
+		public init(
+			mode: String? = nil,
+			probeConnected: Bool? = nil,
+			online: Bool? = nil,
+			power: Bool? = nil,
+			temps: [SmokeSensorKey : Measurement<UnitTemperature>]? = nil
+		) {
+			self.mode = mode
+			self.probeConnected = probeConnected
+			self.online = online
+			self.power = power
+			self.temps = temps
+		}
 		
-		return description
-	}
-	
-	public func jsonData() -> Data {
-		return json().data(using: .utf8)!
+		enum CodingKeys: CodingKey {
+			case mode
+			case probeConnected
+			case online
+			case power
+			case temps
+		}
 	}
 	
 	@discardableResult public func apply(update: Codable, to state: SmokeState) -> SmokeState {
@@ -186,39 +191,5 @@ extension SmokeState {
 		}
 		
 		return state
-	}
-}
-
-extension SmokeState {
-	public struct PatchContent: Codable {
-		public var mode: String?
-		public var probeConnected: Bool?
-		public var online: Bool?
-		public var power: Bool?
-		public var targetGrill: Int?
-		public var targetProbe: Int?
-		public var temps: [SmokeSensorKey : Measurement<UnitTemperature>]?
-		
-		public init(
-			mode: String? = nil,
-			probeConnected: Bool? = nil,
-			online: Bool? = nil,
-			power: Bool? = nil,
-			temps: [SmokeSensorKey : Measurement<UnitTemperature>]? = nil
-		) {
-			self.mode = mode
-			self.probeConnected = probeConnected
-			self.online = online
-			self.power = power
-			self.temps = temps
-		}
-		
-		enum CodingKeys: CodingKey {
-			case mode
-			case probeConnected
-			case online
-			case power
-			case temps
-		}
 	}
 }
