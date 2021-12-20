@@ -125,7 +125,7 @@ fileprivate struct RawSmokeStatePatch: Codable {
 // MARK: - Cross-platform methods
 
 extension SmokeState {
-	public func applyTemperatureUpdate(_ temps: SmokeTemperatureUpdate, to state: SmokeState) -> SmokeState {
+	@discardableResult public func applyTemperatureUpdate(_ temps: SmokeTemperatureUpdate, to state: SmokeState) -> SmokeState {
 		if let grillCurrent = temps.grillCurrent {
 			state.temps[.grillCurrent] = Measurement(value: grillCurrent.doubleValue, unit: .fahrenheit)
 		}
