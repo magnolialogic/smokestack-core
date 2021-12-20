@@ -35,10 +35,13 @@ public final class SmokeState: Codable {
 		}
 	}
 	
-	public var temps = [SmokeSensorKey: Measurement<UnitTemperature>]() {
+	public var temps = [SmokeSensor: Measurement<UnitTemperature>]() {
 		willSet {
 			if logChanges {
-				var changeSummary = "grillCurrent: \(String(describing: newValue[.grillCurrent]!.formatted()))"
+				var changeSummary = ""
+				if let grillCurrent = newValue[.grillCurrent], grillCurrent != self.temps[.grillCurrent] {
+					changeSummary += "grillCurrent: \(grillCurrent.formatted())"
+				}
 				if let grillTarget = newValue[.grillTarget], grillTarget != self.temps[.grillTarget] {
 					changeSummary += ", grillTarget: \(grillTarget.formatted())"
 				}
@@ -77,7 +80,7 @@ public final class SmokeState: Codable {
 		self.online = decodedState.online
 		self.power = decodedState.power
 		for temp in decodedState.temps {
-			self.temps[SmokeSensorKey(rawValue: temp.key)!] = Measurement(value: Double(temp.value), unit: .fahrenheit)
+			self.temps[SmokeSensor(rawValue: temp.key)!] = Measurement(value: Double(temp.value), unit: .fahrenheit)
 		}
 	}
 	
@@ -95,6 +98,16 @@ public final class SmokeState: Codable {
 	}
 }
 
+// MARK: - Protocol conformance
+
+extension SmokeState: Equatable {
+	public static func == (lhs: SmokeState, rhs: SmokeState) -> Bool {
+		return lhs.mode == rhs.mode && lhs.probeConnected == rhs.probeConnected && lhs.online == rhs.online && lhs.power == rhs.power && lhs.temps == rhs.temps
+	}
+}
+
+// MARK: - Raw types for JSON codables
+
 fileprivate struct RawSmokeState: Codable {
 	let mode: String
 	let probeConnected: Bool
@@ -103,9 +116,32 @@ fileprivate struct RawSmokeState: Codable {
 	let temps: [String: Int]
 }
 
-extension SmokeState: Equatable {
-	public static func == (lhs: SmokeState, rhs: SmokeState) -> Bool {
-		return lhs.mode == rhs.mode && lhs.probeConnected == rhs.probeConnected && lhs.online == rhs.online && lhs.power == rhs.power && lhs.temps == rhs.temps
+fileprivate struct RawSmokeStatePatch: Codable {
+	let mode: String?
+	let probeConnected: Bool?
+	let online: Bool?
+	let power: Bool?
+	let temps: [String: Int]?
+}
+
+// MARK: - Cross-platform methods
+
+extension SmokeState {
+	public func applyTemperatureUpdate(_ temps: SmokeTemperatureUpdate, to state: SmokeState) -> SmokeState {
+		if let grillCurrent = temps.grillCurrent {
+			state.temps[.grillCurrent] = Measurement(value: grillCurrent.doubleValue, unit: .fahrenheit)
+		}
+		if let grillTarget = temps.grillTarget {
+			state.temps[.grillTarget] = Measurement(value: grillTarget.doubleValue, unit: .fahrenheit)
+		}
+		if let probeCurrent = temps.probeCurrent {
+			state.temps[.probeCurrent] = Measurement(value: probeCurrent.doubleValue, unit: .fahrenheit)
+		}
+		if let probeTarget = temps.probeTarget {
+			state.temps[.probeTarget] = Measurement(value: probeTarget.doubleValue, unit: .fahrenheit)
+		}
+		
+		return state
 	}
 }
 
@@ -119,14 +155,14 @@ extension SmokeState {
 		public var power: Bool?
 		public var targetGrill: Int?
 		public var targetProbe: Int?
-		public var temps: [SmokeSensorKey : Measurement<UnitTemperature>]?
+		public var temps: [SmokeSensor : Measurement<UnitTemperature>]?
 		
 		public init(
 			mode: String? = nil,
 			probeConnected: Bool? = nil,
 			online: Bool? = nil,
 			power: Bool? = nil,
-			temps: [SmokeSensorKey : Measurement<UnitTemperature>]? = nil
+			temps: [SmokeSensor : Measurement<UnitTemperature>]? = nil
 		) {
 			self.mode = mode
 			self.probeConnected = probeConnected
@@ -141,6 +177,48 @@ extension SmokeState {
 			case online
 			case power
 			case temps
+		}
+		
+		public init(from decoder: Decoder) throws {
+			let decodedState = try RawSmokeStatePatch.init(from: decoder)
+			if let mode = decodedState.mode {
+				self.mode = mode
+			}
+			
+			if let probeConnected = decodedState.probeConnected {
+				self.probeConnected = probeConnected
+			}
+			
+			if let online = decodedState.online {
+				self.online = online
+			}
+			
+			if let power = decodedState.power {
+				self.power = power
+			}
+			
+			if let temps = decodedState.temps {
+				var decodedTemps = [SmokeSensor: Measurement<UnitTemperature>]()
+				for temp in temps {
+					decodedTemps[SmokeSensor(rawValue: temp.key)!] = Measurement(value: Double(temp.value), unit: .fahrenheit)
+				}
+				self.temps = decodedTemps
+			}
+		}
+		
+		public func encode(to encoder: Encoder) throws {
+			var container = encoder.container(keyedBy: CodingKeys.self)
+			try? container.encode(mode, forKey: .mode)
+			try? container.encode(probeConnected, forKey: .probeConnected)
+			try? container.encode(online, forKey: .online)
+			try? container.encode(power, forKey: .power)
+			var rawTemps = [String: Int]()
+			if let temps = temps {
+				for temp in temps {
+					rawTemps[temp.key.rawValue] = Int(temp.value.value)
+				}
+			}
+			try? container.encode(rawTemps, forKey: .temps)
 		}
 	}
 	
@@ -170,7 +248,7 @@ extension SmokeState {
 						state.power = value
 					}
 				case "temps":
-					if let value = child.value as? [SmokeSensorKey: Measurement<UnitTemperature>] {
+					if let value = child.value as? [SmokeSensor: Measurement<UnitTemperature>] {
 						for temp in value {
 							switch temp.key {
 							case .grillCurrent:

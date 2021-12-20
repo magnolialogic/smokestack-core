@@ -7,43 +7,30 @@
 
 import Foundation
 
-public enum SmokeSensorKey: String, Codable {
+public enum SmokeSensor: String, Codable {
 	case grillCurrent = "grillCurrent"
 	case grillTarget = "grillTarget"
 	case probeCurrent = "probeCurrent"
 	case probeTarget = "probeTarget"
 }
 
-public enum SmokeSensorType {
-	case grill
-	case probe
-}
-
-public struct SmokeSensorLatest: Codable, Equatable {
-	public var current: Measurement<UnitTemperature>?
-	public var target: Measurement<UnitTemperature>?
-}
-
-public class SmokeTemperatures: Codable, Equatable {
-	public var grill = SmokeSensorLatest()
-	public var probe = SmokeSensorLatest()
-	
-	public static func == (lhs: SmokeTemperatures, rhs: SmokeTemperatures) -> Bool {
-		return lhs.grill == rhs.grill && lhs.probe == rhs.probe
-	}
-}
-
 public struct SmokeTemperatureUpdate: Codable {
-	public var grill: Int
-	public var probe: Int?
+	public var grillCurrent: Int?
+	public var grillTarget: Int?
+	public var probeCurrent: Int?
+	public var probeTarget: Int?
 	
-	public init(grill: Int, probe: Int? = nil) {
-		self.grill = grill
-		self.probe = probe
+	public init(grillCurrent: Int? = nil, grillTarget: Int? = nil, probeCurrent: Int? = nil, probeTarget: Int? = nil) {
+		self.grillCurrent = grillCurrent
+		self.grillTarget = grillTarget
+		self.probeCurrent = probeCurrent
+		self.probeTarget = probeTarget
 	}
 	
 	enum codingKeys: CodingKey {
-		case grill
-		case probe
+		case grillCurrent
+		case grillTarget
+		case probeCurrent
+		case probeTarget
 	}
 }
