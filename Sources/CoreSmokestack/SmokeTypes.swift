@@ -1,9 +1,9 @@
-//
-//  File.swift
-//  
-//
-//  Created by Chris Coffin on 12/15/21.
-//
+/*
+ *  SmokeTypes.swift
+ *  https://github.com/magnolialogic/smokestack-core
+ *
+ *  © 2021-Present @magnolialogic
+ */
 
 import Foundation
 

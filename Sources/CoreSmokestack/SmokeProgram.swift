@@ -30,23 +30,3 @@ extension SmokeProgram: Equatable {
 		return lhs.id == rhs.id && lhs.index == rhs.index && lhs.steps == rhs.steps
 	}
 }
-
-extension SmokeProgram {
-	fileprivate func stepSummary() -> String {
-		var stepString = "["
-		for step in self.steps {
-			stepString += step.jsonDescription() + ","
-		}
-		stepString.removeLast()
-		stepString += "]"
-		return stepString
-	}
-	
-	public func json() -> String {
-		return "{\"id\":\"\(self.id)\",\"index\":\(index),\"steps\":\(self.stepSummary())}"
-	}
-	
-	public func jsonData() -> Data {
-		return json().data(using: .utf8)!
-	}
-}

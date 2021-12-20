@@ -51,7 +51,7 @@ public struct SmokeStep: Codable, Equatable {
 
 extension SmokeStep: CustomStringConvertible {
 	public var description: String {
-		return "Step(mode: \(mode), trigger: \(trigger), limit: \(limit), targetGrill: \(targetGrill))"
+		return "Step(mode: \(mode.rawValue), trigger: \(trigger), limit: \(limit), targetGrill: \(targetGrill))"
 	}
 }
 
