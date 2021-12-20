@@ -38,20 +38,18 @@ public final class SmokeState: Codable {
 	public var temps = [SmokeSensor: Measurement<UnitTemperature>]() {
 		willSet {
 			if logChanges {
-				var changeSummary = ""
 				if let grillCurrent = newValue[.grillCurrent], grillCurrent != self.temps[.grillCurrent] {
-					changeSummary += "grillCurrent: \(grillCurrent.formatted())"
+					MLLogger.console("grillCurrent: \(grillCurrent.formatted())")
 				}
 				if let grillTarget = newValue[.grillTarget], grillTarget != self.temps[.grillTarget] {
-					changeSummary += ", grillTarget: \(grillTarget.formatted())"
+					MLLogger.console("grillTarget: \(grillTarget.formatted())")
 				}
 				if let probeCurrent = newValue[.probeCurrent], probeCurrent != self.temps[.probeCurrent] {
-					changeSummary += ", probeCurrent: \(probeCurrent.formatted())"
+					MLLogger.console("probeCurrent: \(probeCurrent.formatted())")
 				}
 				if let probeTarget = newValue[.probeTarget], probeTarget != self.temps[.probeTarget] {
-					changeSummary += ", probeTarget: \(probeTarget.formatted())"
+					MLLogger.console("probeTarget: \(probeTarget.formatted())")
 				}
-				MLLogger.console(changeSummary)
 			}
 		}
 	}
